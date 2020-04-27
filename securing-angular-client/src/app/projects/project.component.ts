@@ -10,6 +10,7 @@ import { Milestone } from '../model/milestone';
 import { MilestoneStatus } from '../model/milestone-status';
 import { Project } from '../model/project';
 import { AddEditMilestoneDialogComponent } from './add-edit-milestone-dialog.component';
+import { AuthService } from '../core/auth-service.component';
 
 @Component({
   selector: 'app-project',
@@ -28,7 +29,8 @@ export class ProjectComponent implements OnInit {
     private _route: ActivatedRoute,
     private _projectService: ProjectService,
     private _acctService: AccountService,
-    public dialog: MatDialog
+    private _authService: AuthService,
+    public dialog: MatDialog,
   ) {}
 
   ngOnInit() {
@@ -102,5 +104,20 @@ export class ProjectComponent implements OnInit {
       if (!this.milestoneStatuses) return '';
       var status = this.milestoneStatuses.find(ms => ms.id == id);
       return status ? status.name : 'unknown';
+  }
+
+  canEditProject(): boolean {
+    if (
+      !this.project ||
+      !this._authService.authContext ||
+      !this._authService.authContext.userProfile ||
+      !this._authService.authContext.userProfile.userPermissions
+    ) {
+      return false;
+    }
+    const editPerm = this._authService.authContext.userProfile.userPermissions.find(
+      up => up.projectId === this.project.id && up.value === 'Edit'
+    );
+    return !!editPerm || this._authService.authContext.isAdmin;
   }
 }
